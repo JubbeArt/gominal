@@ -19,11 +19,12 @@ const (
 )
 
 type UI struct {
-	runes      [][]rune
-	images     [][]image.Image
-	isImage    [][]bool
-	colors     [][]color.Color
-	fontStyles [][]FontStyle
+	runes           [][]rune
+	images          [][]image.Image
+	isImage         [][]bool
+	textColors      [][]color.Color
+	textBackgrounds [][]color.Color
+	textStyles      [][]FontStyle
 
 	colWidth  int
 	rowHeight int
@@ -44,33 +45,36 @@ func (ui *UI) setup() {
 	ui.rows = height / ui.rowHeight
 
 	ui.runes = make([][]rune, ui.rows)
-	ui.colors = make([][]color.Color, ui.rows)
-	ui.fontStyles = make([][]FontStyle, ui.rows)
+	ui.textColors = make([][]color.Color, ui.rows)
+	ui.textBackgrounds = make([][]color.Color, ui.rows)
+	ui.textStyles = make([][]FontStyle, ui.rows)
 	ui.isImage = make([][]bool, ui.rows)
 	ui.images = make([][]image.Image, ui.rows)
 
 	for row := range ui.runes {
 		ui.runes[row] = make([]rune, ui.cols)
-		ui.colors[row] = make([]color.Color, ui.cols)
-		ui.fontStyles[row] = make([]FontStyle, ui.cols)
+		ui.textColors[row] = make([]color.Color, ui.cols)
+		ui.textBackgrounds[row] = make([]color.Color, ui.cols)
+		ui.textStyles[row] = make([]FontStyle, ui.cols)
 		ui.isImage[row] = make([]bool, ui.cols)
 		ui.images[row] = make([]image.Image, ui.cols)
 	}
 }
 
 func (ui *UI) Rune(char rune, col, row int) {
-	ui.RuneFull(char, col, row, color.White, FontNormal)
+	ui.RuneFull(char, col, row, color.White, color.Black, FontNormal)
 }
 
-func (ui *UI) RuneFull(char rune, col, row int, color color.Color, fontStyle FontStyle) {
+func (ui *UI) RuneFull(char rune, col, row int, textColor color.Color, bgColor color.Color, fontStyle FontStyle) {
 	if ui.outOfBounds(col, row) {
 		return
 	}
 
 	ui.runes[row][col] = char
 	ui.isImage[row][col] = false
-	ui.colors[row][col] = color
-	ui.fontStyles[row][col] = fontStyle
+	ui.textColors[row][col] = textColor
+	ui.textBackgrounds[row][col] = bgColor
+	ui.textStyles[row][col] = fontStyle
 }
 
 func (ui *UI) Image(image image.Image, col, row int) {
@@ -155,7 +159,7 @@ func (ui *UI) render(width, height int) *image.RGBA {
 				char := ui.runes[row][col]
 				textDrawer := normalDrawer
 
-				if ui.fontStyles[row][col] == FontBold {
+				if ui.textStyles[row][col] == FontBold {
 					textDrawer = boldDrawer
 				}
 
@@ -166,10 +170,28 @@ func (ui *UI) render(width, height int) *image.RGBA {
 				col := col
 				row := row
 				go func() {
-					textColor := ui.colors[row][col]
-					draw.DrawMask(outImg, ui.rect(col, row),
-						image.NewUniform(textColor), image.Point{},
-						textImg, image.Point{X: col * ui.colWidth, Y: row * ui.rowHeight}, draw.Src)
+					bgColor := ui.textBackgrounds[row][col]
+
+					if bgColor != color.Black {
+						draw.Draw(outImg, ui.rect(col, row), image.NewUniform(bgColor), image.Point{}, draw.Src)
+					}
+
+					textColor := ui.textColors[row][col]
+					textStart := image.Point{X: col * ui.colWidth, Y: row * ui.rowHeight}
+
+					if textColor == color.White {
+						draw.Draw(
+							outImg, ui.rect(col, row),
+							textImg, textStart,
+							draw.Over)
+					} else {
+						draw.DrawMask(
+							outImg, ui.rect(col, row),
+							image.NewUniform(textColor), image.Point{},
+							textImg, textStart,
+							draw.Over)
+					}
+
 					wg.Done()
 				}()
 			}
