@@ -1,7 +1,6 @@
 package gominal
 
 import (
-	"errors"
 	"runtime"
 	"time"
 	"unsafe"
@@ -23,7 +22,8 @@ type Window struct {
 	colWidth  int
 	rowHeight int
 
-	font font.Face
+	fontNormal font.Face
+	fontBold   font.Face
 
 	resizeCallback func(width, height int)
 	charCallback   func(char rune)
@@ -71,11 +71,7 @@ func NewWindow(render func(ui *UI)) (*Window, error) {
 		return nil, err
 	}
 
-	w.font, err = loadFont(18)
-
-	if err != nil {
-		return nil, errors.New("could not find a suitable font")
-	}
+	w.fontNormal, w.fontBold = loadFonts(18)
 
 	w.win.SetSizeCallback(func(win *glfw.Window, width int, height int) {
 		w.resizeCallback(width, height)
@@ -114,7 +110,7 @@ func (w *Window) Run() {
 			win:       w.win,
 			colWidth:  w.colWidth,
 			rowHeight: w.rowHeight,
-			font:      w.font,
+			font:      w.fontNormal,
 		}
 		ui.setup()
 
