@@ -10,9 +10,26 @@ import (
 	"golang.org/x/image/font"
 )
 
-func loadFont(name string, size int) (font.Face, error) {
+var potentialFonts = []string{
+	"DejaVuSansMono.ttf",
+	"NotoMono-Regular.ttf",
+	"UbuntuMono-R.ttf",
+	"LiberationMono-Regular.ttf",
+	"FreeMono.ttf",
+}
 
-	fontPath, err := findfont.Find(name)
+func loadFont(size int) (font.Face, error) {
+	var fontPath = ""
+	var err error
+
+	for _, fontName := range potentialFonts {
+		fontPath, err = findfont.Find(fontName)
+
+		if err != nil {
+			break
+		}
+	}
+
 	if err != nil {
 		return nil, err
 	}

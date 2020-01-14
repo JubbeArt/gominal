@@ -36,11 +36,12 @@ func newUI(win *glfw.Window, colWidth, rowHeight int) *UI {
 	}
 
 	var err error
-	ui.font, err = loadFont("arial.ttf", 18)
+	ui.font, err = loadFont(18)
 
 	if err != nil {
-		panic(err)
+		panic("could not find a suitable font")
 	}
+
 	return ui
 }
 
