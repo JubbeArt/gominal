@@ -6,7 +6,6 @@ import (
 	"image/draw"
 	"sync"
 
-	"github.com/go-gl/glfw/v3.3/glfw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 )
@@ -34,13 +33,9 @@ type UI struct {
 
 	fontBold   font.Face
 	fontNormal font.Face
-
-	win *glfw.Window
 }
 
-func (ui *UI) setup() {
-	width, height := ui.win.GetSize()
-
+func (ui *UI) setup(width, height int) {
 	ui.cols = width / ui.colWidth
 	ui.rows = height / ui.rowHeight
 
@@ -85,6 +80,9 @@ func (ui *UI) Image(image image.Image, col, row int) {
 	ui.images[row][col] = image
 	ui.isImage[row][col] = true
 }
+
+func (ui *UI) Rows() int { return ui.rows }
+func (ui *UI) Cols() int { return ui.cols }
 
 func (ui *UI) FullImage(img image.Image, startCol, startRow int) {
 	bounds := img.Bounds()

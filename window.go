@@ -1,8 +1,6 @@
 package gominal
 
 import (
-	"os"
-	"os/signal"
 	"runtime"
 	"time"
 	"unsafe"
@@ -19,7 +17,7 @@ func init() {
 
 type Window struct {
 	win        *glfw.Window
-	userRender func(ui *UI, cols, rows int)
+	userRender func(ui *UI)
 
 	colWidth  int
 	rowHeight int
@@ -39,17 +37,6 @@ type KeyEvent struct {
 }
 
 func NewWindow() (*Window, error) {
-	w := &Window{
-		win:        nil,
-		userRender: func(ui *UI, cols, rows int) {},
-		colWidth:   12,
-		rowHeight:  24,
-
-		resizeCallback: func(width, height int) {},
-		charCallback:   func(char rune) {},
-		keyCallback:    func(event KeyEvent) {},
-	}
-
 	err := glfw.Init()
 
 	if err != nil {
@@ -58,11 +45,20 @@ func NewWindow() (*Window, error) {
 
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
+	glfw.WindowHint(glfw.Visible, glfw.False)
 
-	width := 1200
-	height := 800
+	w := &Window{
+		win:        nil,
+		userRender: func(ui *UI) {},
+		colWidth:   12,
+		rowHeight:  24,
 
-	w.win, err = glfw.CreateWindow(width, height, "", nil, nil)
+		resizeCallback: func(width, height int) {},
+		charCallback:   func(char rune) {},
+		keyCallback:    func(event KeyEvent) {},
+	}
+
+	w.win, err = glfw.CreateWindow(1200, 800, "", nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -75,16 +71,17 @@ func NewWindow() (*Window, error) {
 
 	w.fontNormal, w.fontBold = loadFonts(18)
 
-	w.win.SetSizeCallback(func(win *glfw.Window, width int, height int) {
+	w.win.SetSizeCallback(func(_ *glfw.Window, width int, height int) {
 		w.resizeCallback(width, height)
 	})
 
-	w.win.SetCharCallback(func(win *glfw.Window, char rune) {
+	w.win.SetCharCallback(func(_ *glfw.Window, char rune) {
 		w.charCallback(char)
 	})
 
-	w.win.SetKeyCallback(func(win *glfw.Window, key glfw.Key, scanCode int, action glfw.Action, mods glfw.ModifierKey) {
+	w.win.SetKeyCallback(func(_ *glfw.Window, key glfw.Key, _ int, action glfw.Action, mods glfw.ModifierKey) {
 		if action == glfw.Press {
+
 			w.keyCallback(KeyEvent{
 				Key:   key,
 				Ctrl:  mods&glfw.ModControl == 0,
@@ -101,15 +98,18 @@ func (w *Window) Run() {
 	//totalForAvr := time.Duration(0)
 	//runs := 0
 
-	interruptSignal := make(chan os.Signal)
-	signal.Notify(interruptSignal, os.Interrupt)
+	w.win.Show()
+
+	//interruptSignal := make(chan os.Signal)
+	//signal.Notify(interruptSignal, os.Kill)
+	//signal.Notify(interruptSignal, os.Interrupt)
 
 	for !w.win.ShouldClose() {
-		select {
-		case <-interruptSignal:
-			w.Close()
-		default:
-		}
+		//select {
+		//case <-interruptSignal:
+		//	w.Close()
+		//default:
+		//}
 
 		start := time.Now()
 
@@ -118,17 +118,16 @@ func (w *Window) Run() {
 
 		//total := time.Now()
 		ui := &UI{
-			win:        w.win,
 			colWidth:   w.colWidth,
 			rowHeight:  w.rowHeight,
 			fontNormal: w.fontNormal,
 			fontBold:   w.fontBold,
 		}
-		ui.setup()
+		ui.setup(windowWidth, windowHeight)
 
 		//tUserRender := time.Now()
 		if w.userRender != nil {
-			w.userRender(ui, windowWidth/w.colWidth, windowHeight/w.rowHeight)
+			w.userRender(ui)
 		}
 		//fmt.Println("w.userRender(ui): ", time.Now().Sub(tUserRender))
 
@@ -180,12 +179,16 @@ func (w *Window) Cols() int {
 	width, _ := w.win.GetSize()
 	return width / w.colWidth
 }
-func (w *Window) GlfwWindow() *glfw.Window                   { return w.win }
-func (w *Window) Render(render func(ui *UI, cols, rows int)) { w.userRender = render }
-func (w *Window) SetSize(cols, rows int)                     { w.win.SetSize(cols*w.colWidth, rows*w.rowHeight) }
-func (w *Window) SetTitle(title string)                      { w.win.SetTitle(title) }
-func (w *Window) SetSizeInPixel(width, height int)           { w.win.SetSize(width, height) }
-func (w *Window) OnResize(handler func(width, height int))   { w.resizeCallback = handler }
-func (w *Window) OnKeyDown(handler func(event KeyEvent))     { w.keyCallback = handler }
-func (w *Window) OnChar(handler func(char rune))             { w.charCallback = handler }
-func (w *Window) Close()                                     { w.win.SetShouldClose(true) }
+func (w *Window) GlfwWindow() *glfw.Window                 { return w.win }
+func (w *Window) Render(render func(ui *UI))               { w.userRender = render }
+func (w *Window) SetSize(cols, rows int)                   { w.win.SetSize(cols*w.colWidth, rows*w.rowHeight) }
+func (w *Window) SetTitle(title string)                    { w.win.SetTitle(title) }
+func (w *Window) SetSizeInPixel(width, height int)         { w.win.SetSize(width, height) }
+func (w *Window) OnResize(handler func(width, height int)) { w.resizeCallback = handler }
+func (w *Window) OnKeyDown(handler func(event KeyEvent))   { w.keyCallback = handler }
+func (w *Window) OnChar(handler func(char rune))           { w.charCallback = handler }
+func (w *Window) Close()                                   { w.win.SetShouldClose(true) }
+func (w *Window) ColWidth() int                            { return w.colWidth }
+func (w *Window) SetColWidth(width int)                    { w.colWidth = width }
+func (w *Window) RowHeight() int                           { return w.rowHeight }
+func (w *Window) SetRowHeight(height int)                  { w.rowHeight = height }
