@@ -11,11 +11,19 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
+type FontStyle int
+
+const (
+	FontNormal FontStyle = iota
+	FontBold
+)
+
 type UI struct {
-	runes   [][]rune
-	images  [][]image.Image
-	isImage [][]bool
-	colors  [][]color.Color
+	runes      [][]rune
+	images     [][]image.Image
+	isImage    [][]bool
+	colors     [][]color.Color
+	fontStyles [][]FontStyle
 
 	colWidth  int
 	rowHeight int
@@ -23,7 +31,8 @@ type UI struct {
 	cols int
 	rows int
 
-	font font.Face
+	fontBold   font.Face
+	fontNormal font.Face
 
 	win *glfw.Window
 }
@@ -36,22 +45,24 @@ func (ui *UI) setup() {
 
 	ui.runes = make([][]rune, ui.rows)
 	ui.colors = make([][]color.Color, ui.rows)
+	ui.fontStyles = make([][]FontStyle, ui.rows)
 	ui.isImage = make([][]bool, ui.rows)
 	ui.images = make([][]image.Image, ui.rows)
 
 	for row := range ui.runes {
 		ui.runes[row] = make([]rune, ui.cols)
 		ui.colors[row] = make([]color.Color, ui.cols)
+		ui.fontStyles[row] = make([]FontStyle, ui.cols)
 		ui.isImage[row] = make([]bool, ui.cols)
 		ui.images[row] = make([]image.Image, ui.cols)
 	}
 }
 
 func (ui *UI) Rune(char rune, col, row int) {
-	ui.RuneWithColor(char, col, row, color.White)
+	ui.RuneFull(char, col, row, color.White, FontNormal)
 }
 
-func (ui *UI) RuneWithColor(char rune, col, row int, color color.Color) {
+func (ui *UI) RuneFull(char rune, col, row int, color color.Color, fontStyle FontStyle) {
 	if ui.outOfBounds(col, row) {
 		return
 	}
@@ -59,6 +70,7 @@ func (ui *UI) RuneWithColor(char rune, col, row int, color color.Color) {
 	ui.runes[row][col] = char
 	ui.isImage[row][col] = false
 	ui.colors[row][col] = color
+	ui.fontStyles[row][col] = fontStyle
 }
 
 func (ui *UI) Image(image image.Image, col, row int) {
@@ -113,10 +125,16 @@ func (ui *UI) render(width, height int) *image.RGBA {
 	outImg := image.NewRGBA(image.Rect(0, 0, width, height))
 	textImg := image.NewRGBA(outImg.Bounds())
 
-	textDrawer := font.Drawer{
+	normalDrawer := font.Drawer{
 		Dst:  textImg,
 		Src:  image.White,
-		Face: ui.font,
+		Face: ui.fontNormal,
+	}
+
+	boldDrawer := font.Drawer{
+		Dst:  textImg,
+		Src:  image.White,
+		Face: ui.fontBold,
 	}
 
 	var wg sync.WaitGroup
@@ -135,6 +153,12 @@ func (ui *UI) render(width, height int) *image.RGBA {
 				}()
 			} else if !ui.isImage[row][col] && ui.runes[row][col] != 0 {
 				char := ui.runes[row][col]
+				textDrawer := normalDrawer
+
+				if ui.fontStyles[row][col] == FontBold {
+					textDrawer = boldDrawer
+				}
+
 				textDrawer.Dot = fixed.P(col*ui.colWidth, (row+1)*ui.rowHeight-3)
 				textDrawer.DrawString(string(char))
 

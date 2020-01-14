@@ -118,10 +118,11 @@ func (w *Window) Run() {
 
 		//total := time.Now()
 		ui := &UI{
-			win:       w.win,
-			colWidth:  w.colWidth,
-			rowHeight: w.rowHeight,
-			font:      w.fontNormal,
+			win:        w.win,
+			colWidth:   w.colWidth,
+			rowHeight:  w.rowHeight,
+			fontNormal: w.fontNormal,
+			fontBold:   w.fontBold,
 		}
 		ui.setup()
 
