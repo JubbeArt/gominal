@@ -1,6 +1,8 @@
 package gominal
 
 import (
+	"os"
+	"os/signal"
 	"runtime"
 	"time"
 	"unsafe"
@@ -36,10 +38,10 @@ type KeyEvent struct {
 	Shift bool
 }
 
-func NewWindow(render func(ui *UI)) (*Window, error) {
+func NewWindow() (*Window, error) {
 	w := &Window{
 		win:        nil,
-		userRender: render,
+		userRender: func(ui *UI) {},
 		colWidth:   12,
 		rowHeight:  24,
 
@@ -99,7 +101,16 @@ func (w *Window) Run() {
 	//totalForAvr := time.Duration(0)
 	//runs := 0
 
+	interruptSignal := make(chan os.Signal)
+	signal.Notify(interruptSignal, os.Interrupt)
+
 	for !w.win.ShouldClose() {
+		select {
+		case <-interruptSignal:
+			w.Close()
+		default:
+		}
+
 		start := time.Now()
 
 		w.win.MakeContextCurrent()
@@ -121,11 +132,11 @@ func (w *Window) Run() {
 		//fmt.Println("w.userRender(ui): ", time.Now().Sub(tUserRender))
 
 		//tUIRender := time.Now()
-		buffer := ui.render(windowWidth, windowHeight)
+		img := ui.render(windowWidth, windowHeight)
 		//fmt.Println("ui.render(...): ", time.Now().Sub(tUIRender))
 
-		bounds := buffer.Bounds()
-		bufferWidth, bufferHeight := bounds.Dx(), bounds.Dy()
+		bounds := img.Bounds()
+		imgWidth, imgHeight := bounds.Dx(), bounds.Dy()
 
 		//tGLRender := time.Now()
 
@@ -134,9 +145,9 @@ func (w *Window) Run() {
 		gl.PixelZoom(1, -1)
 		gl.Viewport(0, 0, int32(windowWidth), int32(windowHeight))
 		gl.DrawPixels(
-			int32(bufferWidth), int32(bufferHeight),
+			int32(imgWidth), int32(imgHeight),
 			gl.RGBA, gl.UNSIGNED_BYTE,
-			unsafe.Pointer(&buffer.Pix[0]))
+			unsafe.Pointer(&img.Pix[0]))
 		//gl.Flush()
 		//fmt.Println("gl.Render(...): ", time.Now().Sub(tGLRender))
 
@@ -158,6 +169,10 @@ func (w *Window) Run() {
 		}
 		//fmt.Println()
 	}
+}
+
+func (w *Window) Render(render func(ui *UI)) {
+	w.userRender = render
 }
 
 func (w *Window) SetTitle(title string) *Window {
