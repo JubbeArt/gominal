@@ -28,16 +28,7 @@ type UI struct {
 	win *glfw.Window
 }
 
-func newUI(win *glfw.Window, font font.Face, colWidth, rowHeight int) *UI {
-	return &UI{
-		win:       win,
-		colWidth:  colWidth,
-		rowHeight: rowHeight,
-		font:      font,
-	}
-}
-
-func (ui *UI) clear() {
+func (ui *UI) setup() {
 	width, height := ui.win.GetSize()
 
 	ui.cols = width / ui.colWidth
@@ -167,11 +158,6 @@ func (ui *UI) render(width, height int) *image.RGBA {
 func (ui *UI) rect(col, row int) image.Rectangle {
 	return image.Rect(col*ui.colWidth, row*ui.rowHeight, (col+1)*ui.colWidth, (row+1)*ui.rowHeight)
 }
-
-//func (ui *UI) Cursor(cursor glfw.Cursor, col, row int) {
-//	//	actually should create own types for cursor tho...
-//	// user imports other glfw = unlucky
-//}
 
 func (ui *UI) outOfBounds(col, row int) bool {
 	return col >= ui.cols || row >= ui.rows

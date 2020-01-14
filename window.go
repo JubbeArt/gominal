@@ -14,7 +14,7 @@ func init() {
 	runtime.LockOSThread()
 }
 
-type window struct {
+type Window struct {
 	win        *glfw.Window
 	userRender func(ui *UI)
 
@@ -34,8 +34,8 @@ type KeyEvent struct {
 	Shift bool
 }
 
-func Window(render func(ui *UI)) *window {
-	win := &window{
+func NewWindow(render func(ui *UI)) *Window {
+	win := &Window{
 		win:        nil,
 		userRender: render,
 		width:      1200,
@@ -50,7 +50,7 @@ func Window(render func(ui *UI)) *window {
 	return win
 }
 
-func (w *window) Run() {
+func (w *Window) Run() {
 	err := glfw.Init()
 
 	if err != nil {
@@ -107,8 +107,13 @@ func (w *window) Run() {
 		windowWidth, windowHeight := w.win.GetSize()
 
 		//total := time.Now()
-		ui := newUI(w.win, font, w.colWidth, w.rowHeight)
-		ui.clear()
+		ui := &UI{
+			win:       w.win,
+			colWidth:  w.colWidth,
+			rowHeight: w.rowHeight,
+			font:      font,
+		}
+		ui.setup()
 
 		//tUserRender := time.Now()
 		if w.userRender != nil {
@@ -125,7 +130,7 @@ func (w *window) Run() {
 
 		//tGLRender := time.Now()
 
-		//gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		//gl.setup(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.RasterPos2f(-1, 1)
 		gl.PixelZoom(1, -1)
 		gl.Viewport(0, 0, int32(windowWidth), int32(windowHeight))
@@ -156,34 +161,34 @@ func (w *window) Run() {
 	}
 }
 
-func (w *window) SetTitle(title string) *window {
+func (w *Window) SetTitle(title string) *Window {
 	w.SetTitle(title)
 	return w
 }
 
-func (w *window) Size(cols, rows int) *window {
+func (w *Window) Size(cols, rows int) *Window {
 	w.width = cols * w.colWidth
 	w.height = rows * w.rowHeight
 	return w
 }
 
-func (w *window) SizeInPixel(width, height int) *window {
+func (w *Window) SizeInPixel(width, height int) *Window {
 	w.width = width
 	w.height = height
 	return w
 }
 
-func (w *window) OnResize(handler func(width, height int)) *window {
+func (w *Window) OnResize(handler func(width, height int)) *Window {
 	w.resizeCallback = handler
 	return w
 }
 
-func (w *window) OnKeyDown(handler func(event KeyEvent)) *window {
+func (w *Window) OnKeyDown(handler func(event KeyEvent)) *Window {
 	w.keyCallback = handler
 	return w
 }
 
-func (w *window) OnChar(handler func(char rune)) *window {
+func (w *Window) OnChar(handler func(char rune)) *Window {
 	w.charCallback = handler
 	return w
 }
