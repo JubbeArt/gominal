@@ -4,17 +4,11 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"io/ioutil"
-	"os"
 	"sync"
 
-	"golang.org/x/image/math/fixed"
-
-	"github.com/golang/freetype/truetype"
-
-	"golang.org/x/image/font"
-
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 )
 
 type UI struct {
@@ -23,8 +17,8 @@ type UI struct {
 	isImage [][]bool
 	colors  [][]color.Color
 
-	gridWidth  int
-	gridHeight int
+	colWidth  int
+	rowHeight int
 
 	cols int
 	rows int
@@ -34,52 +28,27 @@ type UI struct {
 	win *glfw.Window
 }
 
-func newUI(win *glfw.Window) *UI {
+func newUI(win *glfw.Window, colWidth, rowHeight int) *UI {
 	ui := &UI{
-		win:        win,
-		gridWidth:  12,
-		gridHeight: 24,
+		win:       win,
+		colWidth:  colWidth,
+		rowHeight: rowHeight,
 	}
 
-	err := ui.loadFont()
+	var err error
+	ui.font, err = loadFont("arial.ttf", 18)
+
 	if err != nil {
 		panic(err)
 	}
 	return ui
 }
 
-func (ui *UI) loadFont() error {
-	file, err := os.Open("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
-
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-	bytes, err := ioutil.ReadAll(file)
-
-	if err != nil {
-		return err
-	}
-
-	ttFont, err := truetype.Parse(bytes)
-
-	if err != nil {
-		return err
-	}
-
-	ui.font = truetype.NewFace(ttFont, &truetype.Options{
-		Size:              18,
-		GlyphCacheEntries: 2048,
-	})
-	return nil
-}
-
 func (ui *UI) clear() {
 	width, height := ui.win.GetSize()
 
-	ui.cols = width / ui.gridWidth
-	ui.rows = height / ui.gridHeight
+	ui.cols = width / ui.colWidth
+	ui.rows = height / ui.rowHeight
 
 	ui.runes = make([][]rune, ui.rows)
 	ui.colors = make([][]color.Color, ui.rows)
@@ -125,10 +94,10 @@ func (ui *UI) FullImage(img image.Image, startCol, startRow int) {
 
 	var wg sync.WaitGroup
 
-	for y := 0; y < height+ui.gridHeight; y += ui.gridHeight {
+	for y := 0; y < height+ui.rowHeight; y += ui.rowHeight {
 		col := startCol
 
-		for x := 0; x < width+ui.gridWidth; x += ui.gridWidth {
+		for x := 0; x < width+ui.colWidth; x += ui.colWidth {
 			if ui.outOfBounds(col, row) {
 				break
 			}
@@ -140,7 +109,7 @@ func (ui *UI) FullImage(img image.Image, startCol, startRow int) {
 			row := row
 
 			go func() {
-				subImg := image.NewRGBA(image.Rect(0, 0, ui.gridWidth, ui.gridHeight))
+				subImg := image.NewRGBA(image.Rect(0, 0, ui.colWidth, ui.rowHeight))
 
 				start := image.Point{X: x, Y: y}
 				draw.Draw(subImg, subImg.Bounds(), img, start, draw.Src)
@@ -182,7 +151,7 @@ func (ui *UI) render(width, height int) *image.RGBA {
 				}()
 			} else if !ui.isImage[row][col] && ui.runes[row][col] != 0 {
 				char := ui.runes[row][col]
-				textDrawer.Dot = fixed.P(col*ui.gridWidth, (row+1)*ui.gridHeight-3)
+				textDrawer.Dot = fixed.P(col*ui.colWidth, (row+1)*ui.rowHeight-3)
 				textDrawer.DrawString(string(char))
 
 				wg.Add(1)
@@ -192,7 +161,7 @@ func (ui *UI) render(width, height int) *image.RGBA {
 					textColor := ui.colors[row][col]
 					draw.DrawMask(outImg, ui.rect(col, row),
 						image.NewUniform(textColor), image.Point{},
-						textImg, image.Point{X: col * ui.gridWidth, Y: row * ui.gridHeight}, draw.Src)
+						textImg, image.Point{X: col * ui.colWidth, Y: row * ui.rowHeight}, draw.Src)
 					wg.Done()
 				}()
 			}
@@ -203,7 +172,7 @@ func (ui *UI) render(width, height int) *image.RGBA {
 }
 
 func (ui *UI) rect(col, row int) image.Rectangle {
-	return image.Rect(col*ui.gridWidth, row*ui.gridHeight, (col+1)*ui.gridWidth, (row+1)*ui.gridHeight)
+	return image.Rect(col*ui.colWidth, row*ui.rowHeight, (col+1)*ui.colWidth, (row+1)*ui.rowHeight)
 }
 
 //func (ui *UI) Cursor(cursor glfw.Cursor, col, row int) {
@@ -215,14 +184,14 @@ func (ui *UI) outOfBounds(col, row int) bool {
 	return col >= ui.cols || row >= ui.rows
 }
 
-func (ui *UI) SetSize(cols, rows int) {
-	ui.win.SetSize(cols*ui.gridWidth, rows*ui.gridHeight)
+func (ui *UI) Size(cols, rows int) {
+	ui.win.SetSize(cols*ui.colWidth, rows*ui.rowHeight)
 }
 
 func (ui *UI) SetTitle(title string) {
 	ui.win.SetTitle(title)
 }
 
-func (ui *UI) SetSizePixels(width, height int) {
+func (ui *UI) SizeInPixels(width, height int) {
 	ui.win.SetSize(width, height)
 }

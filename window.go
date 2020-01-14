@@ -18,8 +18,10 @@ type window struct {
 	win        *glfw.Window
 	userRender func(ui *UI)
 
-	width  int
-	height int
+	width     int
+	height    int
+	colWidth  int
+	rowHeight int
 
 	resizeCallback func(width, height int)
 	charCallback   func(char rune)
@@ -34,10 +36,13 @@ type KeyEvent struct {
 
 func Window(render func(ui *UI)) *window {
 	win := &window{
-		win:            nil,
-		userRender:     render,
-		width:          1200,
-		height:         800,
+		win:        nil,
+		userRender: render,
+		width:      1200,
+		height:     800,
+		colWidth:   12,
+		rowHeight:  24,
+
 		resizeCallback: func(width, height int) {},
 		charCallback:   func(char rune) {},
 		keyCallback:    func(event KeyEvent) {},
@@ -45,7 +50,13 @@ func Window(render func(ui *UI)) *window {
 	return win
 }
 
-func (w *window) Size(width, height int) *window {
+func (w *window) Size(cols, rows int) *window {
+	w.width = cols * w.colWidth
+	w.height = rows * w.rowHeight
+	return w
+}
+
+func (w *window) SizeInPixel(width, height int) *window {
 	w.width = width
 	w.height = height
 	return w
@@ -106,7 +117,7 @@ func (w *window) Run() {
 		}
 	})
 
-	ui := newUI(w.win)
+	ui := newUI(w.win, w.colWidth, w.rowHeight)
 	defer ui.font.Close()
 
 	//totalForAvr := time.Duration(0)
