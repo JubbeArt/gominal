@@ -2,7 +2,6 @@ package gominal
 
 import (
 	"errors"
-	"log"
 	"runtime"
 	"time"
 	"unsafe"
@@ -54,7 +53,6 @@ func NewWindow(render func(ui *UI)) (*Window, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
@@ -70,7 +68,7 @@ func NewWindow(render func(ui *UI)) (*Window, error) {
 	w.win.MakeContextCurrent()
 
 	if err := gl.Init(); err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 
 	w.font, err = loadFont(18)
@@ -101,6 +99,7 @@ func NewWindow(render func(ui *UI)) (*Window, error) {
 }
 
 func (w *Window) Run() {
+	defer glfw.Terminate()
 	//totalForAvr := time.Duration(0)
 	//runs := 0
 
