@@ -19,7 +19,7 @@ func init() {
 
 type Window struct {
 	win        *glfw.Window
-	userRender func(ui *UI)
+	userRender func(ui *UI, cols, rows int)
 
 	colWidth  int
 	rowHeight int
@@ -41,7 +41,7 @@ type KeyEvent struct {
 func NewWindow() (*Window, error) {
 	w := &Window{
 		win:        nil,
-		userRender: func(ui *UI) {},
+		userRender: func(ui *UI, cols, rows int) {},
 		colWidth:   12,
 		rowHeight:  24,
 
@@ -127,7 +127,7 @@ func (w *Window) Run() {
 
 		//tUserRender := time.Now()
 		if w.userRender != nil {
-			w.userRender(ui)
+			w.userRender(ui, windowWidth/w.colWidth, windowHeight/w.rowHeight)
 		}
 		//fmt.Println("w.userRender(ui): ", time.Now().Sub(tUserRender))
 
@@ -171,40 +171,20 @@ func (w *Window) Run() {
 	}
 }
 
-func (w *Window) Render(render func(ui *UI)) {
-	w.userRender = render
+func (w *Window) Rows() int {
+	_, height := w.win.GetSize()
+	return height / w.rowHeight
 }
-
-func (w *Window) SetTitle(title string) *Window {
-	w.win.SetTitle(title)
-	return w
+func (w *Window) Cols() int {
+	width, _ := w.win.GetSize()
+	return width / w.colWidth
 }
-
-func (w *Window) Size(cols, rows int) *Window {
-	w.win.SetSize(cols*w.colWidth, rows*w.rowHeight)
-	return w
-}
-
-func (w *Window) SizeInPixel(width, height int) *Window {
-	w.win.SetSize(width, height)
-	return w
-}
-
-func (w *Window) OnResize(handler func(width, height int)) *Window {
-	w.resizeCallback = handler
-	return w
-}
-
-func (w *Window) OnKeyDown(handler func(event KeyEvent)) *Window {
-	w.keyCallback = handler
-	return w
-}
-
-func (w *Window) OnChar(handler func(char rune)) *Window {
-	w.charCallback = handler
-	return w
-}
-
-func (w *Window) Close() {
-	w.win.SetShouldClose(true)
-}
+func (w *Window) GlfwWindow() *glfw.Window                   { return w.win }
+func (w *Window) Render(render func(ui *UI, cols, rows int)) { w.userRender = render }
+func (w *Window) SetSize(cols, rows int)                     { w.win.SetSize(cols*w.colWidth, rows*w.rowHeight) }
+func (w *Window) SetTitle(title string)                      { w.win.SetTitle(title) }
+func (w *Window) SetSizeInPixel(width, height int)           { w.win.SetSize(width, height) }
+func (w *Window) OnResize(handler func(width, height int))   { w.resizeCallback = handler }
+func (w *Window) OnKeyDown(handler func(event KeyEvent))     { w.keyCallback = handler }
+func (w *Window) OnChar(handler func(char rune))             { w.charCallback = handler }
+func (w *Window) Close()                                     { w.win.SetShouldClose(true) }
