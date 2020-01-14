@@ -1,10 +1,13 @@
 package gominal
 
 import (
+	"errors"
 	"log"
 	"runtime"
 	"time"
 	"unsafe"
+
+	"golang.org/x/image/font"
 
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -18,10 +21,10 @@ type Window struct {
 	win        *glfw.Window
 	userRender func(ui *UI)
 
-	width     int
-	height    int
 	colWidth  int
 	rowHeight int
+
+	font font.Face
 
 	resizeCallback func(width, height int)
 	charCallback   func(char rune)
@@ -34,12 +37,10 @@ type KeyEvent struct {
 	Shift bool
 }
 
-func NewWindow(render func(ui *UI)) *Window {
-	win := &Window{
+func NewWindow(render func(ui *UI)) (*Window, error) {
+	w := &Window{
 		win:        nil,
 		userRender: render,
-		width:      1200,
-		height:     800,
 		colWidth:   12,
 		rowHeight:  24,
 
@@ -47,29 +48,35 @@ func NewWindow(render func(ui *UI)) *Window {
 		charCallback:   func(char rune) {},
 		keyCallback:    func(event KeyEvent) {},
 	}
-	return win
-}
 
-func (w *Window) Run() {
 	err := glfw.Init()
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 
-	w.win, err = glfw.CreateWindow(w.width, w.height, "", nil, nil)
+	width := 1200
+	height := 800
+
+	w.win, err = glfw.CreateWindow(width, height, "", nil, nil)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	w.win.MakeContextCurrent()
 
 	if err := gl.Init(); err != nil {
 		log.Fatalln(err)
+	}
+
+	w.font, err = loadFont(18)
+
+	if err != nil {
+		return nil, errors.New("could not find a suitable font")
 	}
 
 	w.win.SetSizeCallback(func(win *glfw.Window, width int, height int) {
@@ -90,13 +97,10 @@ func (w *Window) Run() {
 		}
 	})
 
-	font, err := loadFont(18)
+	return w, nil
+}
 
-	if err != nil {
-		panic("could not find a suitable font")
-	}
-	defer font.Close()
-
+func (w *Window) Run() {
 	//totalForAvr := time.Duration(0)
 	//runs := 0
 
@@ -111,7 +115,7 @@ func (w *Window) Run() {
 			win:       w.win,
 			colWidth:  w.colWidth,
 			rowHeight: w.rowHeight,
-			font:      font,
+			font:      w.font,
 		}
 		ui.setup()
 
@@ -162,19 +166,17 @@ func (w *Window) Run() {
 }
 
 func (w *Window) SetTitle(title string) *Window {
-	w.SetTitle(title)
+	w.win.SetTitle(title)
 	return w
 }
 
 func (w *Window) Size(cols, rows int) *Window {
-	w.width = cols * w.colWidth
-	w.height = rows * w.rowHeight
+	w.win.SetSize(cols*w.colWidth, rows*w.rowHeight)
 	return w
 }
 
 func (w *Window) SizeInPixel(width, height int) *Window {
-	w.width = width
-	w.height = height
+	w.win.SetSize(width, height)
 	return w
 }
 
@@ -191,4 +193,8 @@ func (w *Window) OnKeyDown(handler func(event KeyEvent)) *Window {
 func (w *Window) OnChar(handler func(char rune)) *Window {
 	w.charCallback = handler
 	return w
+}
+
+func (w *Window) Close() {
+	w.win.SetShouldClose(true)
 }
