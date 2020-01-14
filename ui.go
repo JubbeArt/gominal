@@ -28,21 +28,13 @@ type UI struct {
 	win *glfw.Window
 }
 
-func newUI(win *glfw.Window, colWidth, rowHeight int) *UI {
-	ui := &UI{
+func newUI(win *glfw.Window, font font.Face, colWidth, rowHeight int) *UI {
+	return &UI{
 		win:       win,
 		colWidth:  colWidth,
 		rowHeight: rowHeight,
+		font:      font,
 	}
-
-	var err error
-	ui.font, err = loadFont(18)
-
-	if err != nil {
-		panic("could not find a suitable font")
-	}
-
-	return ui
 }
 
 func (ui *UI) clear() {
@@ -183,16 +175,4 @@ func (ui *UI) rect(col, row int) image.Rectangle {
 
 func (ui *UI) outOfBounds(col, row int) bool {
 	return col >= ui.cols || row >= ui.rows
-}
-
-func (ui *UI) Size(cols, rows int) {
-	ui.win.SetSize(cols*ui.colWidth, rows*ui.rowHeight)
-}
-
-func (ui *UI) SetTitle(title string) {
-	ui.win.SetTitle(title)
-}
-
-func (ui *UI) SizeInPixels(width, height int) {
-	ui.win.SetSize(width, height)
 }
