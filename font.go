@@ -1,9 +1,19 @@
-package gominal
+package main
 
 import (
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
 )
+
+const (
+	styleNormal = "normal"
+	styleBold   = "bold"
+)
+
+var styles = map[string]bool{
+	styleNormal: true,
+	styleBold:   true,
+}
 
 func loadFonts(size int) (font.Face, font.Face) {
 	fontNormal, _ := truetype.Parse(fontBytes)
