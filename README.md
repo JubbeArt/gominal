@@ -6,9 +6,17 @@ Terminal like UI framework.
 * Communication done with JSON over stdin / stdout
 * A box in the grid can contain either a character or some image data
 
+## Installation
+GLFW and OpenGL is needed for this project, see their pages for installation:
+ * https://github.com/go-gl/glfw#installation 
+ * https://github.com/go-gl/gl#gl--
+
+The binary can be compiled with
+`go build -o gominal *.go`
+
 ## Requests
 
-Sent to gominal on stdin
+Sent to gominal on stdin. One line per request. 
 
 ### char - draw a character to screen
 
@@ -18,14 +26,14 @@ Sent to gominal on stdin
     "char": string
     "col":  int
     "row":  int
-    "style": "normal" | "bold" (optional, default "normal")
-    "color": (optional, default white)
+    "style": "normal" | "bold" (optional, defaults to "normal")
+    "color": (optional, defaults to white)
     {
         "r": int (0 to 255)
         "g": int
         "b": int
     } 
-    "background": (optinal, default black)
+    "background": (optinal, defaults to black)
     {
         "r": int
         "g": int

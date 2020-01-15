@@ -25,6 +25,7 @@ var (
 	cols      int
 
 	drawRequests = make(chan drawRequest, 100)
+	resized      = make(chan struct{}, 10)
 )
 
 func main() {
@@ -85,6 +86,7 @@ func main() {
 		rows = newRows
 
 		sendResponse(sizeResponse{Type: "size", Rows: rows, Cols: cols, ColWidth: colWidth, RowHeight: rowHeight})
+		resized <- struct{}{}
 	})
 
 	window.SetCharCallback(func(_ *glfw.Window, char rune) {
@@ -145,15 +147,22 @@ func main() {
 	for !window.ShouldClose() {
 		start := time.Now()
 
+		// prolly not needed here
 		window.MakeContextCurrent()
 
 		drawTime := time.Now()
+
+		needRedraw := false
 
 	drawLoop:
 		for {
 			select {
 			case req := <-drawRequests:
 				req.draw(outImg)
+				needRedraw = true
+			case <-resized:
+				_ = true
+			//	needRedraw = true
 			default:
 				break drawLoop
 			}
@@ -168,6 +177,11 @@ func main() {
 
 		glTime := time.Now()
 
+		if needRedraw {
+
+		}
+
+		// has to be called every time?
 		gl.RasterPos2f(-1, 1)
 		gl.PixelZoom(1, -1)
 		gl.Viewport(0, 0, int32(windowWidth), int32(windowHeight))
