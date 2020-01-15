@@ -6,6 +6,8 @@ import (
 	"image/draw"
 	"math"
 
+	"github.com/golang/freetype/truetype"
+
 	"golang.org/x/image/math/fixed"
 
 	"golang.org/x/image/font"
@@ -25,6 +27,7 @@ type charDrawRequest struct {
 }
 
 func (req charDrawRequest) draw(out *image.RGBA) {
+	// not actually needed? could draw directly to out
 	img := image.NewRGBA(rect(req.col, req.row))
 	draw.Draw(img, img.Bounds(), image.NewUniform(req.bg), image.Point{}, draw.Src)
 
@@ -75,4 +78,32 @@ func (clearDrawRequest) draw(out *image.RGBA) {
 
 func rect(col, row int) image.Rectangle {
 	return image.Rect(col*colWidth, row*rowHeight, (col+1)*colWidth, (row+1)*rowHeight)
+}
+
+const (
+	styleNormal = "normal"
+	styleBold   = "bold"
+)
+
+var (
+	fontNormal font.Face
+	fontBold   font.Face
+
+	styles = map[string]bool{
+		styleNormal: true,
+		styleBold:   true,
+	}
+)
+
+func loadFonts(size int) {
+	ttFontNormal, _ := truetype.Parse(fontBytes)
+	ttFontBold, _ := truetype.Parse(fontBoldBytes)
+
+	options := &truetype.Options{
+		Size:              float64(size),
+		GlyphCacheEntries: 2048,
+	}
+
+	fontNormal = truetype.NewFace(ttFontNormal, options)
+	fontBold = truetype.NewFace(ttFontBold, options)
 }

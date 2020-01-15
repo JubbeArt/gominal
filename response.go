@@ -1,5 +1,28 @@
 package main
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
+func sendError(err error) {
+	sendErrorStr(err.Error())
+}
+
+func sendErrorStr(err string) {
+	sendResponse(errorResponse{Type: "error", Error: err})
+}
+
+func sendResponse(response interface{}) {
+	bytes, err := json.Marshal(response)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(string(bytes))
+}
+
 type keyResponse struct {
 	Type  string `json:"type"`
 	Key   string `json:"key"`

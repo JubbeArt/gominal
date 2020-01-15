@@ -2,8 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
-	"fmt"
 	"image"
 	"log"
 	"os"
@@ -13,7 +11,6 @@ import (
 
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
-	"golang.org/x/image/font"
 )
 
 func init() {
@@ -21,13 +18,11 @@ func init() {
 }
 
 var (
-	window     *glfw.Window
-	colWidth   = 12
-	rowHeight  = 24
-	fontNormal font.Face
-	fontBold   font.Face
-	rows       int
-	cols       int
+	window    *glfw.Window
+	colWidth  = 12
+	rowHeight = 24
+	rows      int
+	cols      int
 
 	drawRequests = make(chan drawRequest, 100)
 )
@@ -69,7 +64,7 @@ func main() {
 		return
 	}
 
-	fontNormal, fontBold = loadFonts(18)
+	loadFonts(18)
 
 	window.SetSizeCallback(func(_ *glfw.Window, width int, height int) {
 		newCols := width / colWidth
@@ -86,10 +81,7 @@ func main() {
 	})
 
 	window.SetCharCallback(func(_ *glfw.Window, char rune) {
-		sendResponse(charResponse{
-			Type: "char",
-			Rune: string(char),
-		})
+		sendResponse(charResponse{Type: "char", Rune: string(char)})
 	})
 
 	window.SetKeyCallback(func(_ *glfw.Window, key glfw.Key, scanCode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -184,27 +176,6 @@ func main() {
 			time.Sleep(30*time.Millisecond - diff)
 		}
 	}
-}
-
-func sendError(err error) {
-	sendErrorStr(err.Error())
-}
-
-func sendErrorStr(err string) {
-	sendResponse(errorResponse{
-		Type:  "error",
-		Error: err,
-	})
-}
-
-func sendResponse(response interface{}) {
-	bytes, err := json.Marshal(response)
-
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(string(bytes))
 }
 
 var keyLookup = map[glfw.Key]string{

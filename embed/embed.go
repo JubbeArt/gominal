@@ -16,6 +16,6 @@ var fontBytes = %#v
 var fontBoldBytes = %#v
 `, fontBytes, fontBoldBytes)
 
-	_ = ioutil.WriteFile("../font_data.go", []byte(file), 0664)
+	_ = ioutil.WriteFile("../font.go", []byte(file), 0664)
 
 }

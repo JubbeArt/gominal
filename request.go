@@ -96,7 +96,19 @@ func handleRequest(line []byte) error {
 		drawRequests <- imageDrawRequest{img: img, col: *req.Col, row: *req.Row}
 	case "clear":
 		drawRequests <- clearDrawRequest{}
+	case "title":
+		var req titleRequest
+		err := json.Unmarshal(line, &req)
 
+		if err != nil {
+			return errors.WithMessage(err, "could not parse request")
+		} else if req.Title == nil {
+			return errors.New("title request is missing \"title\" field")
+		}
+
+		window.SetTitle(*req.Title)
+	case "close":
+		window.SetShouldClose(true)
 	default:
 		return errors.Errorf("unknown request type %q", request.Type)
 	}
@@ -123,8 +135,6 @@ type imageRequest struct {
 	Row   *int    `json:"row"`
 }
 
-type closeRequest struct{}
-
 type titleRequest struct {
-	Title string `json:"title"`
+	Title *string `json:"title"`
 }
