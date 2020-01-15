@@ -13,6 +13,21 @@ import (
 	"golang.org/x/image/font"
 )
 
+const (
+	styleNormal = "normal"
+	styleBold   = "bold"
+)
+
+var (
+	fontNormal font.Face
+	fontBold   font.Face
+
+	styles = map[string]bool{
+		styleNormal: true,
+		styleBold:   true,
+	}
+)
+
 type drawRequest interface {
 	draw(out *image.RGBA)
 }
@@ -79,21 +94,6 @@ func (clearDrawRequest) draw(out *image.RGBA) {
 func rect(col, row int) image.Rectangle {
 	return image.Rect(col*colWidth, row*rowHeight, (col+1)*colWidth, (row+1)*rowHeight)
 }
-
-const (
-	styleNormal = "normal"
-	styleBold   = "bold"
-)
-
-var (
-	fontNormal font.Face
-	fontBold   font.Face
-
-	styles = map[string]bool{
-		styleNormal: true,
-		styleBold:   true,
-	}
-)
 
 func loadFonts(size int) {
 	ttFontNormal, _ := truetype.Parse(fontBytes)

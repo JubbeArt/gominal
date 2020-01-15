@@ -13,6 +13,29 @@ import (
 	"github.com/pkg/errors"
 )
 
+type request struct {
+	Type *string `json:"type"`
+}
+
+type setCharRequest struct {
+	Rune       *string     `json:"char"`
+	Col        *int        `json:"col"`
+	Row        *int        `json:"row"`
+	Color      *color.RGBA `json:"color"`
+	Background *color.RGBA `json:"background"`
+	Style      *string     `json:"style"`
+}
+
+type imageRequest struct {
+	Image *string `json:"image"`
+	Col   *int    `json:"col"`
+	Row   *int    `json:"row"`
+}
+
+type titleRequest struct {
+	Title *string `json:"title"`
+}
+
 func handleRequest(line []byte) error {
 	var request request
 
@@ -114,27 +137,4 @@ func handleRequest(line []byte) error {
 	}
 
 	return nil
-}
-
-type request struct {
-	Type *string `json:"type"`
-}
-
-type setCharRequest struct {
-	Rune       *string     `json:"char"`
-	Col        *int        `json:"col"`
-	Row        *int        `json:"row"`
-	Color      *color.RGBA `json:"color"`
-	Background *color.RGBA `json:"background"`
-	Style      *string     `json:"style"`
-}
-
-type imageRequest struct {
-	Image *string `json:"image"`
-	Col   *int    `json:"col"`
-	Row   *int    `json:"row"`
-}
-
-type titleRequest struct {
-	Title *string `json:"title"`
 }

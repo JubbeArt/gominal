@@ -39,14 +39,21 @@ func main() {
 
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
-	//glfw.WindowHint(glfw.Visible, glfw.False)
-	//window.Show()
+	glfw.WindowHint(glfw.Visible, glfw.False)
 
-	window, err = glfw.CreateWindow(400, 200, "", nil, nil)
+	windowState := savedWindowState()
+
+	window, err = glfw.CreateWindow(windowState.Width, windowState.Height, "", nil, nil)
 	if err != nil {
 		sendError(err)
 		return
 	}
+
+	if windowState.X != -1 {
+		window.SetPos(windowState.X, windowState.Y)
+	}
+
+	window.Show()
 
 	{
 		width, height := window.GetSize()
@@ -105,6 +112,13 @@ func main() {
 				Super: mods&glfw.ModSuper != 0,
 			})
 		}
+	})
+
+	window.SetCloseCallback(func(_ *glfw.Window) {
+		state := WindowState{}
+		state.Width, state.Height = window.GetSize()
+		state.X, state.Y = window.GetPos()
+		state.save()
 	})
 
 	go func() {
