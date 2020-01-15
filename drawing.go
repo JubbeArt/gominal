@@ -30,7 +30,7 @@ func (req charDrawRequest) draw(out *image.RGBA) {
 
 	fontFace := fontNormal
 
-	if req.style == "bold" {
+	if req.style == styleBold {
 		fontFace = fontBold
 	}
 

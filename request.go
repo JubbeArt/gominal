@@ -108,12 +108,6 @@ type request struct {
 	Type *string `json:"type"`
 }
 
-//type colorRGB struct {
-//	R uint8 `json:"R"`
-//	G uint8 `json:"G"`
-//	B uint8 `json:"B"`
-//}
-
 type setCharRequest struct {
 	Rune       *string     `json:"char"`
 	Col        *int        `json:"col"`
@@ -129,4 +123,8 @@ type imageRequest struct {
 	Row   *int    `json:"row"`
 }
 
-// maybe no size request? dont mess with user window
+type closeRequest struct{}
+
+type titleRequest struct {
+	Title string `json:"title"`
+}
