@@ -16,7 +16,7 @@ The binary can be compiled with
 
 ## Requests
 
-Sent to gominal on stdin. One line per request. 
+Sent to gominal on stdin. One request per line, with each request ending with "\n". 
 
 ### char - draw a character to screen
 

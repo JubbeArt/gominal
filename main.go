@@ -3,11 +3,14 @@ package main
 import (
 	"bufio"
 	"image"
+	"io"
 	"log"
 	"os"
 	"runtime"
 	"time"
 	"unsafe"
+
+	"github.com/pkg/errors"
 
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -99,31 +102,33 @@ func main() {
 	})
 
 	go func() {
-		stdIn := bufio.NewScanner(os.Stdin)
+		stdIn := bufio.NewReader(os.Stdin)
 
-		for stdIn.Scan() {
-			line := stdIn.Bytes()
-			err := handleRequest(line)
+		for {
+			line, err := stdIn.ReadBytes('\n')
+
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				sendError(errors.WithMessage(err, "could not read line"))
+			}
+
+			err = handleRequest(line)
 
 			if err != nil {
 				sendError(err)
 			}
 		}
-
-		window.SetShouldClose(true)
 	}()
 
 	outImg := image.NewRGBA(image.Rect(0, 0, 1920, 1080))
 
 	logFile, _ := os.OpenFile("perf.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	logger := log.New(logFile, "", 0)
 	defer logFile.Close()
+	logger := log.New(logFile, "", 0)
 
 	for !window.ShouldClose() {
 		start := time.Now()
-		// prolly not needed here
-		window.MakeContextCurrent()
-		drawTime := time.Now()
 		needRedraw := false
 
 	drawLoop:
@@ -133,44 +138,38 @@ func main() {
 				req.draw(outImg)
 				needRedraw = true
 			case <-resized:
-				_ = true
-			//	needRedraw = true
+				needRedraw = true
 			default:
 				break drawLoop
 			}
 		}
 
-		logger.Println("draw requests ", time.Now().Sub(drawTime))
+		logger.Println("draw requests:\t", time.Now().Sub(start))
+		glTime := time.Now()
 
 		windowWidth, windowHeight := window.GetSize()
 
 		bounds := outImg.Bounds()
 		imgWidth, imgHeight := bounds.Dx(), bounds.Dy()
 
-		glTime := time.Now()
-
-		if needRedraw {
-
-		}
-
-		// has to be called every time?
 		gl.RasterPos2f(-1, 1)
 		gl.PixelZoom(1, -1)
 		gl.Viewport(0, 0, int32(windowWidth), int32(windowHeight))
-		gl.DrawPixels(
-			int32(imgWidth), int32(imgHeight),
-			gl.RGBA, gl.UNSIGNED_BYTE,
-			unsafe.Pointer(&outImg.Pix[0]))
 
-		logger.Println("gl drawing ", time.Now().Sub(glTime))
+		if needRedraw {
+			gl.DrawPixels(
+				int32(imgWidth), int32(imgHeight),
+				gl.RGBA, gl.UNSIGNED_BYTE,
+				unsafe.Pointer(&outImg.Pix[0]))
+		}
+
+		diff := time.Now().Sub(start)
+		logger.Println("gl drawing:\t\t", time.Now().Sub(glTime))
+		logger.Println("total:\t\t\t", diff)
+		logger.Println()
 
 		window.SwapBuffers()
 		glfw.PollEvents()
-
-		diff := time.Now().Sub(start)
-
-		logger.Println("total ", diff)
-		logger.Println()
 
 		if diff < 30*time.Millisecond {
 			time.Sleep(30*time.Millisecond - diff)
