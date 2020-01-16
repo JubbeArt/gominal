@@ -33,6 +33,10 @@ func handleRequest(line []byte) error {
 			return errors.WithMessage(err, "could not parse request")
 		} else if req.Rune == nil {
 			return errors.New("char request is missing \"char\" field")
+		} else if req.Col == nil {
+			return errors.New("char request is missing \"col\" field")
+		} else if req.Row == nil {
+			return errors.New("char request is missing \"row\" field")
 		}
 
 		char, width := utf8.DecodeRuneInString(*req.Rune)
@@ -41,10 +45,6 @@ func handleRequest(line []byte) error {
 			return errors.New("char request was sent with empty char")
 		} else if char == utf8.RuneError && width == 1 {
 			return errors.New("char request was sent with invalid utf8")
-		} else if req.Col == nil {
-			return errors.New("char request is missing \"col\" field")
-		} else if req.Row == nil {
-			return errors.New("char request is missing \"row\" field")
 		}
 
 		col := *req.Col
@@ -115,8 +115,6 @@ func handleRequest(line []byte) error {
 
 	return nil
 }
-
-
 
 type request struct {
 	Type *string `json:"type"`

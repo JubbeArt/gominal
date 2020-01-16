@@ -28,8 +28,8 @@ type keyResponse struct {
 	Key   string `json:"key"`
 	Ctrl  bool   `json:"ctrl"`
 	Shift bool   `json:"shift"`
-	Super bool   `json:"meta"`
 	Alt   bool   `json:"alt"`
+	Super bool   `json:"super"`
 }
 
 type charResponse struct {
@@ -37,9 +37,15 @@ type charResponse struct {
 	Rune string `json:"char"`
 }
 
-type errorResponse struct {
-	Type  string `json:"type"`
-	Error string `json:"error"`
+type mouseResponse struct {
+	Type   string `json:"type"`
+	Button string `json:"button"`
+	Col    int    `json:"col"`
+	Row    int    `json:"row"`
+	Ctrl   bool   `json:"ctrl"`
+	Shift  bool   `json:"shift"`
+	Alt    bool   `json:"alt"`
+	Super  bool   `json:"super"`
 }
 
 type sizeResponse struct {
@@ -48,4 +54,9 @@ type sizeResponse struct {
 	Cols      int    `json:"cols"`
 	ColWidth  int    `json:"colWidth"`
 	RowHeight int    `json:"rowHeight"`
+}
+
+type errorResponse struct {
+	Type  string `json:"type"`
+	Error string `json:"error"`
 }

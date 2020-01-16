@@ -116,6 +116,26 @@ func main() {
 		}
 	})
 
+	window.SetMouseButtonCallback(func(_ *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+		if action != glfw.Press {
+			return
+		}
+
+		if buttonText, ok := mouseLookup[button]; ok {
+			mouseX, mouseY := window.GetCursorPos()
+			sendResponse(mouseResponse{
+				Type:   "mouse",
+				Button: buttonText,
+				Col:    int(mouseX) / colWidth,
+				Row:    int(mouseY) / rowHeight,
+				Ctrl:   mods&glfw.ModControl != 0,
+				Shift:  mods&glfw.ModShift != 0,
+				Alt:    mods&glfw.ModAlt != 0,
+				Super:  mods&glfw.ModSuper != 0,
+			})
+		}
+	})
+
 	window.SetCloseCallback(func(_ *glfw.Window) {
 		state := WindowState{}
 		state.Width, state.Height = window.GetSize()
@@ -146,12 +166,9 @@ func main() {
 
 	for !window.ShouldClose() {
 		start := time.Now()
-
 		// prolly not needed here
 		window.MakeContextCurrent()
-
 		drawTime := time.Now()
-
 		needRedraw := false
 
 	drawLoop:
@@ -204,6 +221,12 @@ func main() {
 			time.Sleep(30*time.Millisecond - diff)
 		}
 	}
+}
+
+var mouseLookup = map[glfw.MouseButton]string{
+	glfw.MouseButtonLeft:   "left",
+	glfw.MouseButtonMiddle: "middle",
+	glfw.MouseButtonRight:  "right",
 }
 
 var keyLookup = map[glfw.Key]string{

@@ -26,7 +26,7 @@ Sent to gominal on stdin. One line per request.
     "char": string
     "col":  int
     "row":  int
-    "style": "normal" | "bold" (optional, defaults to "normal")
+    "style": "normal" or "bold" (optional, defaults to "normal")
     "color": (optional, defaults to white)
     {
         "r": int (0 to 255)
@@ -122,8 +122,8 @@ Will run each time a key is pressed on the keyboard.
     "key":   string
     "ctrl":  bool
     "shift": bool
-    "super": bool
     "alt":   bool
+    "super": bool
 }
 ```
 
@@ -134,9 +134,9 @@ Will run each time a key is pressed on the keyboard.
     "type": "key",
     "key": "backspace",
     "ctrl": true,
-    "shift": false,  
-    "meta": false,
-    "alt": false
+    "shift": false,
+    "alt": false,
+    "super": false
 }
 ```
 
@@ -157,6 +157,34 @@ multiple key presses to generate a single unicode character.
 {
     "type": "char",
     "char": "ö"
+}
+```
+
+### mouse - mouse pressed
+```
+{
+    "type": "mouse"
+    "button": "left" or "middle" or "right"
+    "col": int
+    "row": int
+    "ctrl":  bool
+    "shift": bool
+    "alt":   bool
+    "super": bool
+}
+```
+
+**Example**
+```json
+{
+    "type": "mouse",
+    "button": "right",
+    "col": 4,
+    "row": 7,
+    "ctrl": true,
+    "shift": true,  
+    "alt": false,
+    "super": false
 }
 ```
 
