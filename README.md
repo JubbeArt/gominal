@@ -162,10 +162,10 @@ multiple key presses to generate a single unicode character.
 }
 ```
 
-### mouse - mouse click or release
+### mouseClick - mouse buttons click or release
 ```
 {
-    "type": "mouse"
+    "type": "mouseClick"
     "button": "left" or "middle" or "right"
     "state": "click" or "release"
     "col": int
@@ -180,7 +180,7 @@ multiple key presses to generate a single unicode character.
 **Example**
 ```json
 {
-    "type": "mouse",
+    "type": "mouseClick",
     "button": "right",
     "state": "click",
     "col": 4,
@@ -189,6 +189,24 @@ multiple key presses to generate a single unicode character.
     "shift": true,  
     "alt": false,
     "super": false
+}
+```
+
+### mouseMove - mouse moved into a new col / rol
+```
+{
+    "type": "mouseMove"
+    "col": int
+    "row": int 
+}
+``` 
+
+**Example**
+```json
+{
+    "type": "mouseMove",
+    "col": 23,
+    "row": 10 
 }
 ```
 

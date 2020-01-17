@@ -7,11 +7,20 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
+var (
+	mouseCol = -1
+	mouseRow = -1
+)
+
 func charCallback(char rune) {
 	sendResponse(charResponse{Type: "char", Rune: string(char)})
 }
 
 func keyCallback(key glfw.Key, scanCode int, action glfw.Action, mods glfw.ModifierKey) {
+	if action == glfw.Repeat {
+		return
+	}
+
 	keyName := glfw.GetKeyName(key, scanCode)
 
 	if keyName == "" {
@@ -33,11 +42,11 @@ func keyCallback(key glfw.Key, scanCode int, action glfw.Action, mods glfw.Modif
 	})
 }
 
-func mouseCallback(button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+func mouseClickCallback(button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 	if buttonText, ok := mouseLookup[button]; ok {
 		mouseX, mouseY := window.GetCursorPos()
-		sendResponse(mouseResponse{
-			Type:   "mouse",
+		sendResponse(mouseClickResponse{
+			Type:   "mouseClick",
 			Button: buttonText,
 			State:  actionLookup[action],
 			Col:    int(mouseX) / colWidth,
@@ -46,6 +55,21 @@ func mouseCallback(button glfw.MouseButton, action glfw.Action, mods glfw.Modifi
 			Shift:  mods&glfw.ModShift != 0,
 			Alt:    mods&glfw.ModAlt != 0,
 			Super:  mods&glfw.ModSuper != 0,
+		})
+	}
+}
+
+func mouseMoveCallback(x, y int) {
+	newMouseCol := x / colWidth
+	newMouseRow := y / rowHeight
+
+	if mouseCol != newMouseCol || mouseRow != newMouseRow {
+		mouseCol = newMouseCol
+		mouseRow = newMouseRow
+		sendResponse(mouseMoveResponse{
+			Type: "mouseMove",
+			Col:  mouseCol,
+			Row:  mouseRow,
 		})
 	}
 }
@@ -97,7 +121,7 @@ type charResponse struct {
 	Rune string `json:"char"`
 }
 
-type mouseResponse struct {
+type mouseClickResponse struct {
 	Type   string `json:"type"`
 	Button string `json:"button"`
 	State  string `json:"state"`
@@ -107,6 +131,12 @@ type mouseResponse struct {
 	Shift  bool   `json:"shift"`
 	Alt    bool   `json:"alt"`
 	Super  bool   `json:"super"`
+}
+
+type mouseMoveResponse struct {
+	Type string `json:"type"`
+	Col  int    `json:"col"`
+	Row  int    `json:"row"`
 }
 
 type sizeResponse struct {

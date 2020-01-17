@@ -91,7 +91,11 @@ func main() {
 	})
 
 	window.SetMouseButtonCallback(func(_ *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
-		mouseCallback(button, action, mods)
+		mouseClickCallback(button, action, mods)
+	})
+
+	window.SetCursorPosCallback(func(_ *glfw.Window, x float64, y float64) {
+		mouseMoveCallback(int(x), int(y))
 	})
 
 	window.SetCloseCallback(func(_ *glfw.Window) {
