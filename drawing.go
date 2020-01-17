@@ -73,8 +73,8 @@ type imageDrawRequest struct {
 func (req imageDrawRequest) draw(out *image.RGBA) {
 	start := image.Point{X: req.col * colWidth, Y: req.row * rowHeight}
 	bounds := req.img.Bounds()
-	cols := int(math.Floor(float64(bounds.Dx()) / float64(colWidth)))
-	rows := int(math.Floor(float64(bounds.Dy()) / float64(rowHeight)))
+	cols := int(math.Ceil(float64(bounds.Dx()) / float64(colWidth)))
+	rows := int(math.Ceil(float64(bounds.Dy()) / float64(rowHeight)))
 
 	rect := image.Rect(
 		start.X, start.Y,

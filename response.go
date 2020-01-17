@@ -12,38 +12,34 @@ func charCallback(char rune) {
 }
 
 func keyCallback(key glfw.Key, scanCode int, action glfw.Action, mods glfw.ModifierKey) {
-	if action == glfw.Press {
-		keyName := glfw.GetKeyName(key, scanCode)
+	keyName := glfw.GetKeyName(key, scanCode)
 
-		if keyName == "" {
-			keyName = keyLookup[key]
-		}
-
-		if keyName == "" {
-			keyName = "unknown"
-		}
-
-		sendResponse(keyResponse{
-			Type:  "key",
-			Key:   keyName,
-			Ctrl:  mods&glfw.ModControl != 0,
-			Shift: mods&glfw.ModShift != 0,
-			Alt:   mods&glfw.ModAlt != 0,
-			Super: mods&glfw.ModSuper != 0,
-		})
+	if keyName == "" {
+		keyName = keyLookup[key]
 	}
+
+	if keyName == "" {
+		keyName = "unknown"
+	}
+
+	sendResponse(keyResponse{
+		Type:  "key",
+		Key:   keyName,
+		State: actionLookup[action],
+		Ctrl:  mods&glfw.ModControl != 0,
+		Shift: mods&glfw.ModShift != 0,
+		Alt:   mods&glfw.ModAlt != 0,
+		Super: mods&glfw.ModSuper != 0,
+	})
 }
 
 func mouseCallback(button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
-	if action != glfw.Press {
-		return
-	}
-
 	if buttonText, ok := mouseLookup[button]; ok {
 		mouseX, mouseY := window.GetCursorPos()
 		sendResponse(mouseResponse{
 			Type:   "mouse",
 			Button: buttonText,
+			State:  actionLookup[action],
 			Col:    int(mouseX) / colWidth,
 			Row:    int(mouseY) / rowHeight,
 			Ctrl:   mods&glfw.ModControl != 0,
@@ -89,6 +85,7 @@ func sendResponse(response interface{}) {
 type keyResponse struct {
 	Type  string `json:"type"`
 	Key   string `json:"key"`
+	State string `json:"state"`
 	Ctrl  bool   `json:"ctrl"`
 	Shift bool   `json:"shift"`
 	Alt   bool   `json:"alt"`
@@ -103,6 +100,7 @@ type charResponse struct {
 type mouseResponse struct {
 	Type   string `json:"type"`
 	Button string `json:"button"`
+	State  string `json:"state"`
 	Col    int    `json:"col"`
 	Row    int    `json:"row"`
 	Ctrl   bool   `json:"ctrl"`
@@ -122,6 +120,11 @@ type sizeResponse struct {
 type errorResponse struct {
 	Type  string `json:"type"`
 	Error string `json:"error"`
+}
+
+var actionLookup = map[glfw.Action]string{
+	glfw.Press:   "press",
+	glfw.Release: "release",
 }
 
 var mouseLookup = map[glfw.MouseButton]string{

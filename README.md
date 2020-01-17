@@ -113,13 +113,14 @@ is needed to draw the full image.
 
 Sent from gominal to stdout
 
-### key - key press from window
-Will run each time a key is pressed on the keyboard.
+### key - key press or release
+Will run each time a key is pressed or released on the keyboard.
 
 ```
 {
     "type":  "key"
     "key":   string
+    "state": "press" or "release"
     "ctrl":  bool
     "shift": bool
     "alt":   bool
@@ -133,6 +134,7 @@ Will run each time a key is pressed on the keyboard.
 {
     "type": "key",
     "key": "backspace",
+    "state": "press",
     "ctrl": true,
     "shift": false,
     "alt": false,
@@ -160,11 +162,12 @@ multiple key presses to generate a single unicode character.
 }
 ```
 
-### mouse - mouse pressed
+### mouse - mouse click or release
 ```
 {
     "type": "mouse"
     "button": "left" or "middle" or "right"
+    "state": "click" or "release"
     "col": int
     "row": int
     "ctrl":  bool
@@ -179,6 +182,7 @@ multiple key presses to generate a single unicode character.
 {
     "type": "mouse",
     "button": "right",
+    "state": "click",
     "col": 4,
     "row": 7,
     "ctrl": true,
