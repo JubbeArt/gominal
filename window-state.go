@@ -7,8 +7,11 @@ import (
 	"path/filepath"
 )
 
-const cacheFolder = "gominal"
-const windowFile = "window.json"
+var  windowStateFile string
+func init() {
+	cache, _ := os.UserCacheDir()
+	windowStateFile = filepath.Join(cache, "gominal", "window.json")
+}
 
 func defaultState() WindowState {
 	return WindowState{Width: 640, Height: 480, X: -1, Y: -1}
@@ -22,21 +25,14 @@ type WindowState struct {
 }
 
 // the moment i really wished go had try catch...
-func savedWindowState() WindowState {
-	cacheDir, err := os.UserConfigDir()
+func getWindowState() WindowState {
+	_, err := os.Stat(windowStateFile)
 
 	if err != nil {
 		return defaultState()
 	}
 
-	filePath := filepath.Join(cacheDir, cacheFolder, windowFile)
-	_, err = os.Stat(filePath)
-
-	if err != nil {
-		return defaultState()
-	}
-
-	bytes, err := ioutil.ReadFile(filePath)
+	bytes, err := ioutil.ReadFile(windowStateFile)
 
 	if err != nil {
 		return defaultState()
@@ -61,24 +57,17 @@ func savedWindowState() WindowState {
 }
 
 func (state WindowState) save() {
-	cacheDir, err := os.UserConfigDir()
+	err := os.MkdirAll(filepath.Dir(windowStateFile), 0775)
 
 	if err != nil {
 		return
 	}
 
-	err = os.MkdirAll(filepath.Join(cacheDir, cacheFolder), 0775)
-
-	if err != nil {
-		return
-	}
-
-	filePath := filepath.Join(cacheDir, cacheFolder, windowFile)
 	data, err := json.MarshalIndent(state, "", "\t")
 
 	if err != nil {
 		return
 	}
 
-	_ = ioutil.WriteFile(filePath, data, 0664)
+	_ = ioutil.WriteFile(windowStateFile, data, 0664)
 }

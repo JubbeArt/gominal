@@ -2,13 +2,12 @@ package main
 
 import (
 	"bufio"
-	"image"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"runtime"
 	"time"
-	"unsafe"
 
 	"github.com/pkg/errors"
 
@@ -20,15 +19,14 @@ func init() {
 	runtime.LockOSThread()
 }
 
-var (
-	window    *glfw.Window
+const (
 	colWidth  = 12
 	rowHeight = 24
-	rows      int
-	cols      int
+)
 
-	drawRequests = make(chan drawRequest, 100)
-	resized      = make(chan struct{}, 10)
+var (
+	cols int
+	rows int
 )
 
 func main() {
@@ -45,29 +43,20 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.Visible, glfw.False)
 
-	windowState := savedWindowState()
+	windowState := getWindowState()
 
-	window, err = glfw.CreateWindow(windowState.Width, windowState.Height, "", nil, nil)
+	win, err := glfw.CreateWindow(windowState.Width, windowState.Height, "", nil, nil)
 	if err != nil {
 		sendError(err)
 		return
 	}
 
 	if windowState.X != -1 {
-		window.SetPos(windowState.X, windowState.Y)
+		win.SetPos(windowState.X, windowState.Y)
 	}
 
-	window.Show()
-
-	{
-		width, height := window.GetSize()
-		cols = width / colWidth
-		rows = height / rowHeight
-	}
-
-	sendResponse(sizeResponse{Type: "size", Rows: rows, Cols: cols, ColWidth: colWidth, RowHeight: rowHeight})
-
-	window.MakeContextCurrent()
+	win.Show()
+	win.MakeContextCurrent()
 
 	err = gl.Init()
 	if err != nil {
@@ -76,34 +65,11 @@ func main() {
 	}
 
 	loadFonts(18)
+	setupCallbacks(win)
 
-	window.SetSizeCallback(func(_ *glfw.Window, width int, height int) {
-		sizeCallback(width, height)
-		resized <- struct{}{}
-	})
+	fmt.Println("RUNNING")
 
-	window.SetCharCallback(func(_ *glfw.Window, char rune) {
-		charCallback(char)
-	})
-
-	window.SetKeyCallback(func(_ *glfw.Window, key glfw.Key, scanCode int, action glfw.Action, mods glfw.ModifierKey) {
-		keyCallback(key, scanCode, action, mods)
-	})
-
-	window.SetMouseButtonCallback(func(_ *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
-		mouseClickCallback(button, action, mods)
-	})
-
-	window.SetCursorPosCallback(func(_ *glfw.Window, x float64, y float64) {
-		mouseMoveCallback(int(x), int(y))
-	})
-
-	window.SetCloseCallback(func(_ *glfw.Window) {
-		state := WindowState{}
-		state.Width, state.Height = window.GetSize()
-		state.X, state.Y = window.GetPos()
-		state.save()
-	})
+	quit := make(chan struct{})
 
 	go func() {
 		stdIn := bufio.NewReader(os.Stdin)
@@ -112,12 +78,12 @@ func main() {
 			line, err := stdIn.ReadBytes('\n')
 
 			if err == io.EOF {
-				break
+				quit <- struct{}{}
 			} else if err != nil {
 				sendError(errors.WithMessage(err, "could not read line"))
 			}
 
-			err = handleRequest(line)
+			err = handleRequest(win, line)
 
 			if err != nil {
 				sendError(err)
@@ -125,58 +91,80 @@ func main() {
 		}
 	}()
 
-	outImg := image.NewRGBA(image.Rect(0, 0, 1920, 1080))
+	//outImg := image.NewRGBA(image.Rect(0, 0, 1920, 1080))
 
 	logFile, _ := os.OpenFile("perf.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	defer logFile.Close()
 	logger := log.New(logFile, "", 0)
 
-	for !window.ShouldClose() {
+	for !win.ShouldClose() {
 		start := time.Now()
-		needRedraw := false
+		//needRedraw := false
 
-	drawLoop:
-		for {
-			select {
-			case req := <-drawRequests:
-				req.draw(outImg)
-				needRedraw = true
-			case <-resized:
-				needRedraw = true
-			default:
-				break drawLoop
-			}
+		select {
+		case <-quit:
+			win.SetShouldClose(true)
+		default:
+
 		}
+
+		//drawLoop:
+		//	for {
+		//		select {
+		//		case req := <-drawRequests:
+		//			req.draw(outImg)
+		//			needRedraw = true
+		//		case <-resized:
+		//			needRedraw = true
+		//		default:
+		//			break drawLoop
+		//		}
+		//	}
 
 		logger.Println("draw requests:\t", time.Now().Sub(start))
 		glTime := time.Now()
 
-		windowWidth, windowHeight := window.GetSize()
+		windowWidth, windowHeight := win.GetSize()
 
-		bounds := outImg.Bounds()
-		imgWidth, imgHeight := bounds.Dx(), bounds.Dy()
+		//bounds := outImg.Bounds()
+		//imgWidth, imgHeight := bounds.Dx(), bounds.Dy()
 
 		gl.RasterPos2f(-1, 1)
 		gl.PixelZoom(1, -1)
 		gl.Viewport(0, 0, int32(windowWidth), int32(windowHeight))
 
-		if needRedraw {
-			gl.DrawPixels(
-				int32(imgWidth), int32(imgHeight),
-				gl.RGBA, gl.UNSIGNED_BYTE,
-				unsafe.Pointer(&outImg.Pix[0]))
-		}
+		//if needRedraw {
+		//	gl.DrawPixels(
+		//		int32(imgWidth), int32(imgHeight),
+		//		gl.RGBA, gl.UNSIGNED_BYTE,
+		//		unsafe.Pointer(&outImg.Pix[0]))
+		//}
 
 		diff := time.Now().Sub(start)
 		logger.Println("gl drawing:\t\t", time.Now().Sub(glTime))
 		logger.Println("total:\t\t\t", diff)
 		logger.Println()
 
-		window.SwapBuffers()
+		win.SwapBuffers()
 		glfw.PollEvents()
 
 		if diff < 30*time.Millisecond {
 			time.Sleep(30*time.Millisecond - diff)
 		}
 	}
+}
+
+func setupCallbacks(win *glfw.Window) {
+	win.SetSizeCallback(sizeCallback)
+	win.SetCharCallback(charCallback)
+	win.SetKeyCallback(keyCallback)
+	win.SetMouseButtonCallback(mouseClickCallback)
+	win.SetCursorPosCallback(mouseMoveCallback)
+
+	win.SetCloseCallback(func(_ *glfw.Window) {
+		state := WindowState{}
+		state.Width, state.Height = win.GetSize()
+		state.X, state.Y = win.GetPos()
+		state.save()
+	})
 }

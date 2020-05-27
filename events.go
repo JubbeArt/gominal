@@ -12,11 +12,11 @@ var (
 	mouseRow = -1
 )
 
-func charCallback(char rune) {
-	sendResponse(charResponse{Type: "char", Rune: string(char)})
+func charCallback(win *glfw.Window, char rune) {
+	sendResponse(charEvent{Event: "char", Char: string(char)})
 }
 
-func keyCallback(key glfw.Key, scanCode int, action glfw.Action, mods glfw.ModifierKey) {
+func keyCallback(win *glfw.Window, key glfw.Key, scanCode int, action glfw.Action, mods glfw.ModifierKey) {
 	if action == glfw.Repeat {
 		return
 	}
@@ -31,8 +31,8 @@ func keyCallback(key glfw.Key, scanCode int, action glfw.Action, mods glfw.Modif
 		keyName = "unknown"
 	}
 
-	sendResponse(keyResponse{
-		Type:  "key",
+	sendResponse(keyEvent{
+		Event: "key",
 		Key:   keyName,
 		State: actionLookup[action],
 		Ctrl:  mods&glfw.ModControl != 0,
@@ -42,11 +42,11 @@ func keyCallback(key glfw.Key, scanCode int, action glfw.Action, mods glfw.Modif
 	})
 }
 
-func mouseClickCallback(button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+func mouseClickCallback(win *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 	if buttonText, ok := mouseLookup[button]; ok {
-		mouseX, mouseY := window.GetCursorPos()
-		sendResponse(mouseClickResponse{
-			Type:   "mouseClick",
+		mouseX, mouseY := win.GetCursorPos()
+		sendResponse(mouseClickEvent{
+			Event:  "mouseClick",
 			Button: buttonText,
 			State:  actionLookup[action],
 			Col:    int(mouseX) / colWidth,
@@ -59,22 +59,24 @@ func mouseClickCallback(button glfw.MouseButton, action glfw.Action, mods glfw.M
 	}
 }
 
-func mouseMoveCallback(x, y int) {
+func mouseMoveCallback(win *glfw.Window, x64, y64 float64) {
+	x := int(x64)
+	y := int(y64)
 	newMouseCol := x / colWidth
 	newMouseRow := y / rowHeight
 
 	if mouseCol != newMouseCol || mouseRow != newMouseRow {
 		mouseCol = newMouseCol
 		mouseRow = newMouseRow
-		sendResponse(mouseMoveResponse{
-			Type: "mouseMove",
-			Col:  mouseCol,
-			Row:  mouseRow,
+		sendResponse(mouseMoveEvent{
+			Event: "mouseMove",
+			Col:   mouseCol,
+			Row:   mouseRow,
 		})
 	}
 }
 
-func sizeCallback(width int, height int) {
+func sizeCallback(win *glfw.Window, width int, height int) {
 	newCols := width / colWidth
 	newRows := height / rowHeight
 
@@ -85,7 +87,7 @@ func sizeCallback(width int, height int) {
 	cols = newCols
 	rows = newRows
 
-	sendResponse(sizeResponse{Type: "size", Rows: rows, Cols: cols, ColWidth: colWidth, RowHeight: rowHeight})
+	sendResponse(resizeEvent{Event: "size", Rows: rows, Cols: cols, ColWidth: colWidth, RowHeight: rowHeight})
 }
 
 func sendError(err error) {
@@ -93,7 +95,7 @@ func sendError(err error) {
 }
 
 func sendErrorStr(err string) {
-	sendResponse(errorResponse{Type: "error", Error: err})
+	sendResponse(errorEvent{Event: "error", Error: err})
 }
 
 func sendResponse(response interface{}) {
@@ -106,8 +108,8 @@ func sendResponse(response interface{}) {
 	fmt.Println(string(bytes))
 }
 
-type keyResponse struct {
-	Type  string `json:"type"`
+type keyEvent struct {
+	Event string `json:"event"`
 	Key   string `json:"key"`
 	State string `json:"state"`
 	Ctrl  bool   `json:"ctrl"`
@@ -116,13 +118,13 @@ type keyResponse struct {
 	Super bool   `json:"super"`
 }
 
-type charResponse struct {
-	Type string `json:"type"`
-	Rune string `json:"char"`
+type charEvent struct {
+	Event string `json:"event"`
+	Char  string `json:"char"`
 }
 
-type mouseClickResponse struct {
-	Type   string `json:"type"`
+type mouseClickEvent struct {
+	Event  string `json:"event"`
 	Button string `json:"button"`
 	State  string `json:"state"`
 	Col    int    `json:"col"`
@@ -133,22 +135,22 @@ type mouseClickResponse struct {
 	Super  bool   `json:"super"`
 }
 
-type mouseMoveResponse struct {
-	Type string `json:"type"`
-	Col  int    `json:"col"`
-	Row  int    `json:"row"`
+type mouseMoveEvent struct {
+	Event string `json:"event"`
+	Col   int    `json:"col"`
+	Row   int    `json:"row"`
 }
 
-type sizeResponse struct {
-	Type      string `json:"type"`
+type resizeEvent struct {
+	Event     string `json:"event"`
 	Rows      int    `json:"rows"`
 	Cols      int    `json:"cols"`
 	ColWidth  int    `json:"colWidth"`
 	RowHeight int    `json:"rowHeight"`
 }
 
-type errorResponse struct {
-	Type  string `json:"type"`
+type errorEvent struct {
+	Event string `json:"event"`
 	Error string `json:"error"`
 }
 
